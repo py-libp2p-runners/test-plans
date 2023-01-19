@@ -3,7 +3,7 @@ name: Update Badge
 on:
   workflow_run:
     workflows:
-      - libp2p transport interop test
+      - libp2p multidimensional interop test
     types:
       - completed
     branches:
@@ -22,7 +22,7 @@ env:
 
 jobs:
   update-badge:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     steps:
       - id: workflow
         env:
