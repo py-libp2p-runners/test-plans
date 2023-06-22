@@ -36,10 +36,9 @@ export type Result = {
 };
 
 export type ResultValue = {
-    type: "itermediate" | "final",
-    time_seconds: number,
-    upload_bytes: number,
-    download_bytes: number,
+    connectionEstablishedSeconds: number,
+    uploadSeconds: number,
+    downloadSeconds: number,
 };
 
 export type Comparison = {
