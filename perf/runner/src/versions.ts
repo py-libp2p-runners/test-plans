@@ -1,10 +1,33 @@
-import fs from 'fs';
-import path from 'path';
-
 export type Version = {
     id: string,
-    implementation: "go-libp2p" | "js-libp2p" | "nim-libp2p" | "rust-libp2p" | "zig-libp2p" | "https" | "quic-go",
+    implementation: "go-libp2p" | "js-libp2p" | "nim-libp2p" | "rust-libp2p" | "rust-libp2p-quinn" | "zig-libp2p" | "https" | "quic-go",
     transportStacks: string[],
 }
 
-export const versions: Array<Version> = JSON.parse(fs.readFileSync(path.join(__dirname, '../versionsInput.json'), 'utf8'));
+export const versions: Array<Version> = [
+    {
+        id: "v0.34",
+        implementation: "quic-go",
+        transportStacks: ["quic-v1"]
+    },
+    {
+        id: "v0.52",
+        implementation: "rust-libp2p",
+        transportStacks: ["tcp", "quic-v1"]
+    },
+    {
+        id: "v0.52",
+        implementation: "rust-libp2p-quinn",
+        transportStacks: ["quic-v1"]
+    },
+    {
+        id: "v0.1",
+        implementation: "https",
+        transportStacks: ["tcp"]
+    },
+    {
+        id: "v0.27",
+        implementation: "go-libp2p",
+        transportStacks: ["tcp", "quic-v1"]
+    },
+]

@@ -94,7 +94,7 @@ resource "aws_security_group" "restricted_inbound" {
 resource "aws_launch_template" "perf" {
   name          = "perf-node"
   image_id      = var.ami
-  instance_type = "m5.xlarge"
+  instance_type = "m5n.8xlarge"
 
   # Debug via:
   # - /var/log/cloud-init.log and
@@ -108,15 +108,4 @@ resource "aws_launch_template" "perf" {
     security_groups = [aws_security_group.restricted_inbound.id]
     delete_on_termination = true
   }
-
-  block_device_mappings {
-    device_name = "/dev/xvda"
-    ebs {
-      volume_size           = 100 # New root volume size in GiB
-      volume_type           = "gp2"
-      delete_on_termination = true
-    }
-  }
-
-  update_default_version = true
 }

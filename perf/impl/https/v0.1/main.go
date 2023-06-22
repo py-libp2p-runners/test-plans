@@ -49,7 +49,27 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, error) {
+type nullReader struct {
+	N    uint64
+	read uint64
+}
+
+var _ io.Reader = &nullReader{}
+
+func (r *nullReader) Read(b []byte) (int, error) {
+	remaining := r.N - r.read
+	l := uint64(len(b))
+	if uint64(len(b)) > remaining {
+		l = remaining
+	}
+	r.read += l
+	if r.read == r.N {
+		return int(l), io.EOF
+	}
+	return int(l), nil
+}
+
+func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, time.Duration, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -57,18 +77,18 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 	}
 
 	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, downloadBytes)
+	binary.BigEndian.PutUint64(b, uploadBytes)
 
 	req, err := http.NewRequest(
 		http.MethodPost,
 		fmt.Sprintf("https://%s/", serverAddr),
 		io.MultiReader(
 			bytes.NewReader(b),
-			&reportingReader{orig: &nullReader{N: uploadBytes}, LastReportTime: time.Now(), isUpload: true},
+			&nullReader{N: uploadBytes},
 		),
 	)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
@@ -77,22 +97,23 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 	startTime := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("server returned non-OK status: %d %s", resp.StatusCode, resp.Status)
+		return 0, 0, fmt.Errorf("server returned non-OK status: %d %s", resp.StatusCode, resp.Status)
 	}
+	uploadDoneTime := time.Now()
 	defer resp.Body.Close()
 
 	n, err := drainStream(resp.Body)
 	if err != nil {
-		return 0, fmt.Errorf("error reading response: %w", err)
+		return 0, 0, fmt.Errorf("error reading response: %w", err)
 	}
 	if n != downloadBytes {
-		return 0, fmt.Errorf("expected %d bytes in response, but received %d", downloadBytes, n)
+		return 0, 0, fmt.Errorf("expected %d bytes in response, but received %d", downloadBytes, n)
 	}
 
-	return time.Since(startTime), nil
+	return uploadDoneTime.Sub(startTime), time.Since(uploadDoneTime), nil
 }
 
 func generateEphemeralCertificate() (tls.Certificate, error) {
@@ -147,10 +168,9 @@ func generateEphemeralCertificate() (tls.Certificate, error) {
 }
 
 type Result struct {
-	Type          string  `json:"type"`
-	TimeSeconds   float64 `json:"timeSeconds"`
-	UploadBytes   uint64  `json:"uploadBytes"`
-	DownloadBytes uint64  `json:"downloadBytes"`
+	ConnectionEstablishedSeconds float64 `json:"connectionEstablishedSeconds"`
+	UploadSeconds                float64 `json:"uploadSeconds"`
+	DownloadSeconds              float64 `json:"downloadSeconds"`
 }
 
 func main() {
@@ -197,16 +217,16 @@ func main() {
 		}
 
 		// Run the client and print the results
-		latency, err := runClient(*serverAddr, *uploadBytes, *downloadBytes)
+		upload, download, err := runClient(*serverAddr, *uploadBytes, *downloadBytes)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		jsonB, err := json.Marshal(Result{
-			TimeSeconds:   latency.Seconds(),
-			UploadBytes:   *uploadBytes,
-			DownloadBytes: *downloadBytes,
-			Type:          "final",
+			// TODO: Ideally we would be able to measure the Go std TCP+TLS connection establishment time.
+			ConnectionEstablishedSeconds: 0,
+			UploadSeconds:                upload.Seconds(),
+			DownloadSeconds:              download.Seconds(),
 		})
 		if err != nil {
 			log.Fatalf("failed to marshal perf result: %s", err)
@@ -235,72 +255,9 @@ func sendBytes(s io.Writer, bytesToSend uint64) error {
 
 func drainStream(s io.Reader) (uint64, error) {
 	var recvd int64
-	recvd, err := io.Copy(io.Discard, &reportingReader{orig: s, LastReportTime: time.Now(), isUpload: false})
+	recvd, err := io.Copy(io.Discard, s)
 	if err != nil && err != io.EOF {
 		return uint64(recvd), err
 	}
 	return uint64(recvd), nil
-}
-
-type reportingReader struct {
-	orig           io.Reader
-	LastReportTime time.Time
-	lastReportRead uint64
-	isUpload       bool
-}
-
-var _ io.Reader = &reportingReader{}
-
-func (r *reportingReader) Read(b []byte) (int, error) {
-	n, err := r.orig.Read(b)
-	r.lastReportRead += uint64(n)
-
-	now := time.Now()
-	if now.Sub(r.LastReportTime) >= time.Second {
-		// This section is analogous to your Read implementation
-		result := Result{
-			TimeSeconds: now.Sub(r.LastReportTime).Seconds(),
-			Type:        "intermediary",
-		}
-		if r.isUpload {
-			result.UploadBytes = r.lastReportRead
-		} else {
-			result.DownloadBytes = r.lastReportRead
-		}
-
-		jsonB, err := json.Marshal(result)
-		if err != nil {
-			log.Fatalf("failed to marshal perf result: %s", err)
-		}
-		fmt.Println(string(jsonB))
-
-		r.LastReportTime = now
-		r.lastReportRead = 0
-	}
-
-	return n, err
-}
-
-type nullReader struct {
-	N              uint64
-	read           uint64
-	LastReportTime time.Time
-	lastReportRead uint64
-}
-
-var _ io.Reader = &nullReader{}
-
-func (r *nullReader) Read(b []byte) (int, error) {
-	remaining := r.N - r.read
-	l := uint64(len(b))
-	if uint64(len(b)) > remaining {
-		l = remaining
-	}
-	r.read += l
-
-	if r.read == r.N {
-		return int(l), io.EOF
-	}
-
-	return int(l), nil
 }

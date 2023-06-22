@@ -1,55 +1,44 @@
 import { execSync } from 'child_process';
-import { Version, versions } from './versions';
+import { versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
-async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean, testFilter: string[]) {
-    const iterations = testing ? 1 : 10;
+async function main(clientPublicIP: string, serverPublicIP: string) {
+    const pings = runPing(clientPublicIP, serverPublicIP);
+    const iperf = runIPerf(clientPublicIP, serverPublicIP);
 
-    console.error(`= Starting benchmark with ${iterations} iterations on implementations ${testFilter}`);
-
-    const pings = runPing(clientPublicIP, serverPublicIP, testing);
-    const iperf = runIPerf(clientPublicIP, serverPublicIP, testing);
-
-    const versionsToRun = versions.filter(version => testFilter.includes('all') || testFilter.includes(version.implementation))
-
-    const implsToBuild = Array.from(new Set(versionsToRun.map(v => v.implementation))).join(' ');
-
-    copyAndBuildPerfImplementations(serverPublicIP, implsToBuild);
-    copyAndBuildPerfImplementations(clientPublicIP, implsToBuild);
+    copyAndBuildPerfImplementations(serverPublicIP);
+    copyAndBuildPerfImplementations(clientPublicIP);
 
     const benchmarks = [
-        runBenchmarkAcrossVersions({
-            name: "throughput/upload",
-            clientPublicIP,
-            serverPublicIP,
-            uploadBytes: Number.MAX_SAFE_INTEGER,
-            downloadBytes: 0,
-            unit: "bit/s",
-            iterations,
-            durationSecondsPerIteration: testing ? 5 : 20,
-        }, versionsToRun),
-        runBenchmarkAcrossVersions({
-            name: "throughput/download",
-            clientPublicIP,
-            serverPublicIP,
-            uploadBytes: 0,
-            downloadBytes: Number.MAX_SAFE_INTEGER,
-            unit: "bit/s",
-            iterations,
-            durationSecondsPerIteration: testing ? 5 : 20,
-        }, versionsToRun),
-        runBenchmarkAcrossVersions({
-            name: "Connection establishment + 1 byte round trip latencies",
-            clientPublicIP,
-            serverPublicIP,
-            uploadBytes: 1,
-            downloadBytes: 1,
-            unit: "s",
-            iterations: testing ? 1 : 100,
-            durationSecondsPerIteration: Number.MAX_SAFE_INTEGER,
-        }, versionsToRun),
+             runBenchmarkAcrossVersions({
+                 name: "Single Connection throughput – Upload 100 MiB",
+                 clientPublicIP,
+                 serverPublicIP,
+                 uploadBytes: 100 << 20,
+                 downloadBytes: 0,
+                 unit: "bit/s",
+                 iterations: 5,
+             }),
+             runBenchmarkAcrossVersions({
+                 name: "Single Connection throughput – Download 100 MiB",
+                 clientPublicIP,
+                 serverPublicIP,
+                 uploadBytes: 0,
+                 downloadBytes: 100 << 20,
+                 unit: "bit/s",
+                 iterations: 5,
+             }),
+             runBenchmarkAcrossVersions({
+                 name: "Connection establishment + 1 byte round trip latencies",
+                 clientPublicIP,
+                 serverPublicIP,
+                 uploadBytes: 1,
+                 downloadBytes: 1,
+                 unit: "s",
+                 iterations: 100,
+             }),
     ];
 
     const benchmarkResults: BenchmarkResults = {
@@ -64,11 +53,10 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     console.error("== done");
 }
 
-function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolean): PingResults {
-    const pingCount = testing ? 1 : 100;
-    console.error(`= run ${pingCount} pings from client to server`);
+function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
+    console.error(`= run 100 pings from client to server`);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c ${pingCount} ${serverPublicIP}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 100 ${serverPublicIP}'`;
     const stdout = execCommand(cmd).toString();
 
     // Extract the time from each ping
@@ -83,9 +71,8 @@ function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolea
     return { unit: "s", results: times }
 }
 
-function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boolean): IperfResults {
-    const iPerfIterations = testing ? 1 : 60;
-    console.error(`= run ${iPerfIterations} iPerf TCP from client to server`);
+function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
+    console.error(`= run 60 iPerf UDP from client to server`);
 
     const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
     const killSTDOUT = execCommand(killCMD);
@@ -95,7 +82,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boole
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -t ${iPerfIterations} -N'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 60'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
@@ -114,7 +101,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boole
         })
         .filter((bitrate): bitrate is number => bitrate !== null); // Remove any null values
 
-    return { unit: "bit/s", results: bitrates }
+    return { unit: "bit/s", results:  bitrates}
 }
 
 interface ArgsRunBenchmarkAcrossVersions {
@@ -125,15 +112,14 @@ interface ArgsRunBenchmarkAcrossVersions {
     downloadBytes: number,
     unit: "bit/s" | "s",
     iterations: number,
-    durationSecondsPerIteration: number,
 }
 
-function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, versionsToRun: Version[]): Benchmark {
-    console.error(`= Benchmark ${args.name} on versions ${versionsToRun.map(v => v.implementation).join(', ')}`)
+function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Benchmark {
+    console.error(`= Benchmark ${args.name}`)
 
     const results: Result[] = [];
 
-    for (const version of versionsToRun) {
+    for (const version of versions) {
         console.error(`== Version ${version.implementation}/${version.id}`)
 
         console.error(`=== Starting server ${version.implementation}/${version.id}`);
@@ -156,7 +142,6 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, versio
                 uploadBytes: args.uploadBytes,
                 downloadBytes: args.downloadBytes,
                 iterations: args.iterations,
-                durationSecondsPerIteration: args.durationSecondsPerIteration,
             });
 
             results.push({
@@ -189,31 +174,23 @@ interface ArgsRunBenchmark {
     uploadBytes: number,
     downloadBytes: number,
     iterations: number,
-    durationSecondsPerIteration: number,
 }
 
 function runClient(args: ArgsRunBenchmark): ResultValue[] {
     console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
-    const cmd = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
-    // Note 124 is timeout's exit code when timeout is hit which is not a failure here.
-    const withTimeout = `timeout ${args.durationSecondsPerIteration}s ${cmd} || [ $? -eq 124 ]`
-    const withForLoop = `for i in {1..${args.iterations}}; do ${withTimeout}; done`
-    const withSSH = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} '${withForLoop}'`
+    const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
 
-    const stdout = execCommand(withSSH);
+    const stdout = execCommand(cmd);
 
     const lines = stdout.toString().trim().split('\n');
 
-    const combined: ResultValue[] = [];
+    const combined: ResultValue[]= [];
 
     for (const line of lines) {
-        try {
-            const result = JSON.parse(line) as ResultValue;
-            combined.push(result);
-        } catch (error) {
-            console.error(`Could not parse ResultValue from line: ${line}`)
-        }
+        const result = JSON.parse(line) as ResultValue;
+        combined.push(result);
     }
 
     return combined;
@@ -232,13 +209,13 @@ function execCommand(cmd: string): string {
     }
 }
 
-function copyAndBuildPerfImplementations(ip: string, impls: string) {
-    console.error(`= Building implementations for ${impls} on ${ip}`);
+function copyAndBuildPerfImplementations(ip: string) {
+    console.error(`= Building implementations on ${ip}`);
 
     const stdout = execCommand(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../impl ec2-user@${ip}:/home/ec2-user`);
     console.error(stdout.toString());
 
-    const stdout2 = execCommand(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make ${impls}'`);
+    const stdout2 = execCommand(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make'`);
     console.error(stdout2.toString());
 }
 
@@ -254,22 +231,8 @@ const argv = yargs
             demandOption: true,
             description: 'Server public IP address',
         },
-        'testing': {
-            type: 'boolean',
-            default: false,
-            description: 'Run in testing mode',
-            demandOption: false,
-        },
-        'test-filter': {
-            type: 'string',
-            array: true,
-            choices: ['js-libp2p', 'rust-libp2p', 'go-libp2p', 'https', 'quic-go', 'all'],
-            description: 'Filter tests to run, only the implementations here will be run. It defaults to all.',
-            demandOption: false,
-            default: 'all'
-        }
     })
     .command('help', 'Print usage information', yargs.help)
     .parseSync();
 
-main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['testing'] as boolean, argv['test-filter'] as string[]);
+main(argv['client-public-ip'] as string, argv['server-public-ip'] as string);
