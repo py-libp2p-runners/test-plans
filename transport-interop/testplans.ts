@@ -12,11 +12,11 @@ import path from "path";
     const argv = await yargs(process.argv.slice(2))
         .options({
             'name-filter': {
-                description: 'Only run tests including any of these names (pipe separated)',
+                description: 'Only run tests including this name',
                 default: "",
             },
             'name-ignore': {
-                description: 'Do not run any tests including any of these names (pipe separated)',
+                description: 'Do not run any tests including this name ',
                 default: "",
             },
             'emit-only': {
@@ -35,11 +35,6 @@ import path from "path";
                 default: [],
                 type: 'array'
             },
-            'verbose': {
-                description: 'Enable verbose logging',
-                default: false,
-                type: 'boolean'
-            }
         })
         .help()
         .version(false)
@@ -64,51 +59,17 @@ import path from "path";
         extraVersions.push(JSON.parse(contents.toString()))
     }
 
-    const verbose: boolean = argv.verbose
 
-    let nameFilter: string[] | null = null
-    const rawNameFilter: string | undefined = argv["name-filter"]
-    if (rawNameFilter) {
-        if (verbose) {
-            console.log("rawNameFilter: " + rawNameFilter)
-        }
-        nameFilter = rawNameFilter.split('|').map(item => item.trim());
+    let nameFilter: string | null = argv["name-filter"]
+    if (nameFilter === "") {
+        nameFilter = null
     }
-    if (nameFilter) {
-        console.log("Name Filters:")
-        nameFilter.map(n => console.log("\t" + n))
+    let nameIgnore: string | null = argv["name-ignore"]
+    if (nameIgnore === "") {
+        nameIgnore = null
     }
-    let nameIgnore: string[] | null = null
-    const rawNameIgnore: string | undefined = argv["name-ignore"]
-    if (rawNameIgnore) {
-        if (verbose) {
-            console.log("rawNameIgnore: " + rawNameIgnore)
-        }
-        nameIgnore = rawNameIgnore.split('|').map(item => item.trim());
-    }
-    if (nameIgnore) {
-        console.log("Name Ignores:")
-        nameIgnore.map(n => console.log("\t" + n))
-    }
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore)
 
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, verbose)
-
-    // Sharding support
-    const rawShardCount = process.env.SHARD_COUNT
-    const rawShardIndex = process.env.SHARD_INDEX
-    if ((rawShardCount && !rawShardIndex) || (!rawShardCount && rawShardIndex)) {
-        throw new Error("Both SHARD_COUNT and SHARD_INDEX must be set, or neither")
-    }
-    if (rawShardCount && rawShardIndex) {
-        const shardCount = parseInt(rawShardCount)
-        const shardIndex = parseInt(rawShardIndex)
-        if (isNaN(shardCount) || isNaN(shardIndex) || shardCount < 1 || shardIndex < 0 || shardIndex >= shardCount) {
-            throw new Error(`Invalid shard config: SHARD_COUNT=${rawShardCount}, SHARD_INDEX=${rawShardIndex}`)
-        }
-        testSpecs.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
-        testSpecs = testSpecs.filter((_, i) => i % shardCount === shardIndex)
-        console.log(`Running shard ${shardIndex + 1}/${shardCount}: ${testSpecs.length} tests`)
-    }
 
     if (argv["emit-only"]) {
         for (const testSpec of testSpecs) {

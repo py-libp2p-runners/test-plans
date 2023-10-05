@@ -1,11 +1,12 @@
 {
-    "name": "@libp2p/transport-interop",
+    "name": "Multidimensional libp2p interop test",
     "version": "0.0.1",
     "description": "Tests libp2p implementations against each other across various dimensions.",
     "main": "testplans.ts",
     "scripts": {
         "test": "ts-node src/compose-stdout-helper.ts && ts-node testplans.ts",
-        "renderResults": "ts-node renderResults.ts"
+        "renderResults": "ts-node renderResults.ts",
+        "cache": "ts-node helpers/cache.ts"
     },
     "author": "marcopolo",
     "license": "MIT",
