@@ -23,8 +23,9 @@ const RELAY_QUIC_ADDRESS: &str = "RELAY_QUIC_ADDRESS";
 #[tokio::main]
 async fn main() -> Result<()> {
     env_logger::builder()
+        .filter_level(log::LevelFilter::Debug)
         .parse_filters(
-            "debug,netlink_proto=warn,rustls=warn,multistream_select=warn,libp2p_swarm::connection=info,quinn=debug,libp2p_quic=trace",
+            "netlink_proto=warn,rustls=warn,multistream_select=warn,libp2p_swarm::connection=info",
         )
         .parse_default_env()
         .init();
