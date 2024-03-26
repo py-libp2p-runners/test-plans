@@ -1,16 +1,32 @@
 [
   {
-    "id": "python-v0.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/python-v0.x",
+    "id": "rust-v0.51",
     "transports": [
-      "tcp",
       "ws",
-      "wss",
-      "quic-v1"
+      "tcp",
+      "quic-v1",
+      "webrtc-direct"
     ],
     "secureChannels": [
-      "noise",
-      "tls"
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "rust-v0.52",
+    "transports": [
+      "ws",
+      "tcp",
+      "quic-v1",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
     ],
     "muxers": [
       "mplex",
@@ -19,7 +35,6 @@
   },
   {
     "id": "rust-v0.53",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/rust-v0.53",
     "transports": [
       "ws",
       "tcp",
@@ -36,62 +51,7 @@
     ]
   },
   {
-    "id": "rust-v0.54",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/rust-v0.54",
-    "transports": [
-      "ws",
-      "tcp",
-      "quic-v1",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "rust-v0.55",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/rust-v0.55",
-    "transports": [
-      "ws",
-      "tcp",
-      "quic-v1",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "rust-v0.56",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/rust-v0.56",
-    "transports": [
-      "ws",
-      "tcp",
-      "quic-v1",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "chromium-rust-v0.53",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/chromium-rust-v0.53",
+    "id": "rust-chromium-v0.53",
     "transports": [
       {
         "name": "webtransport",
@@ -115,19 +75,12 @@
     ]
   },
   {
-    "id": "chromium-rust-v0.54",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/chromium-rust-v0.54",
+    "id": "js-v0.45",
     "transports": [
+      "tcp",
+      "ws",
       {
-        "name": "webtransport",
-        "onlyDial": true
-      },
-      {
-        "name": "webrtc-direct",
-        "onlyDial": true
-      },
-      {
-        "name": "ws",
+        "name": "wss",
         "onlyDial": true
       }
     ],
@@ -140,8 +93,26 @@
     ]
   },
   {
-    "id": "chromium-js-v1.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v1.x-chromium",
+    "id": "js-v0.46",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "chromium-js-v0.46",
+    "containerImageID": "browser",
     "transports": [
       {
         "name": "webtransport",
@@ -166,86 +137,8 @@
     ]
   },
   {
-    "id": "chromium-js-v2.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v2.x-chromium",
-    "transports": [
-      {
-        "name": "webtransport",
-        "onlyDial": true
-      },
-      {
-        "name": "wss",
-        "onlyDial": true
-      },
-      {
-        "name": "webrtc-direct",
-        "onlyDial": true
-      },
-      "webrtc"
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "firefox-js-v1.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v1.x-firefox",
-    "transports": [
-      {
-        "name": "webtransport",
-        "onlyDial": true
-      },
-      {
-        "name": "wss",
-        "onlyDial": true
-      },
-      {
-        "name": "webrtc-direct",
-        "onlyDial": true
-      },
-      "webrtc"
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "firefox-js-v2.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v2.x-firefox",
-    "transports": [
-      {
-        "name": "webtransport",
-        "onlyDial": true
-      },
-      {
-        "name": "wss",
-        "onlyDial": true
-      },
-      {
-        "name": "webrtc-direct",
-        "onlyDial": true
-      },
-      "webrtc"
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "webkit-js-v1.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v1.x-webkit",
+    "id": "firefox-js-v0.46",
+    "containerImageID": "browser",
     "transports": [
       {
         "name": "wss",
@@ -266,20 +159,82 @@
     ]
   },
   {
-    "id": "webkit-js-v2.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v2.x-webkit",
+    "id": "go-v0.33",
     "transports": [
-      {
-        "name": "wss",
-        "onlyDial": true
-      },
-      {
-        "name": "webrtc-direct",
-        "onlyDial": true
-      },
-      "webrtc"
+      "tcp",
+      "ws",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
     ],
     "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.32",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.31",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic-v1",
+      "webtransport"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.30",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic-v1",
+      "webtransport"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.29",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic",
+      "quic-v1",
+      "webtransport"
+    ],
+    "secureChannels": [
+      "tls",
       "noise"
     ],
     "muxers": [
@@ -288,8 +243,7 @@
     ]
   },
   {
-    "id": "nim-v1.14",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/nim-v1.14",
+    "id": "nim-v1.0",
     "transports": [
       "tcp",
       "ws"
@@ -303,171 +257,39 @@
     ]
   },
   {
-    "id": "js-v1.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v1.x",
-    "transports": [
-      "tcp",
-      "ws",
-      {
-        "name": "wss",
-        "onlyDial": true
-      }
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "js-v2.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v2.x",
-    "transports": [
-      "tcp",
-      "ws",
-      {
-        "name": "wss",
-        "onlyDial": true
-      }
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "js-v3.x",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v3.x",
-    "transports": [
-      "tcp",
-      "ws",
-      {
-        "name": "wss",
-        "onlyDial": true
-      }
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.46",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/go-v0.46",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.47",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/go-v0.47",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-      "id": "go-v0.48",
-      "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/go-v0.48",
-      "transports": [
-        "tcp",
-        "ws",
-        "wss",
-        "quic-v1",
-        "webtransport",
-        "webrtc-direct"
-      ],
-      "secureChannels": [
-        "tls",
-        "noise"
-      ],
-      "muxers": [
-        "yamux"
-      ]
-  },
-  {
-    "id": "jvm-v1.2",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/jvm-v1.2",
-    "transports": [
-      "tcp",
-      "ws",
-      "quic-v1"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "c-v0.0.1",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/c-v0.0.1",
-    "transports": [
-      "tcp",
-      "quic-v1"
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "dotnet-v1.0",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/dotnet-v1.0",
-    "transports": [
-      "tcp"
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "eth-p2p-z-v0.0.1",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/eth-p2p-z-v0.0.1",
+    "id": "zig-v0.0.1",
     "transports": [
       "quic-v1"
     ],
     "secureChannels": [],
     "muxers": []
+  },
+  {
+    "id": "java-v0.0.1",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "java-v0.6",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
   }
 ]
