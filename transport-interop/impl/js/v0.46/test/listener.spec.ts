@@ -5,7 +5,7 @@ import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 import { getLibp2p } from './fixtures/get-libp2p.js'
 import { redisProxy } from './fixtures/redis-proxy.js'
 import type { Libp2p } from '@libp2p/interface'
-import type { PingService } from '@libp2p/ping'
+import type { PingService } from 'libp2p/ping'
 
 const isDialer: boolean = process.env.is_dialer === 'true'
 const timeoutSecs: string = process.env.test_timeout_secs ?? '180'
