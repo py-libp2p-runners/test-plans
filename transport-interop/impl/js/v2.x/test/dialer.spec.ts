@@ -8,7 +8,7 @@ import type { Libp2p } from '@libp2p/interface'
 import type { PingService } from '@libp2p/ping'
 
 const isDialer: boolean = process.env.is_dialer === 'true'
-const timeoutMs: number = parseInt(process.env.test_timeout_secs ?? '180') * 1000
+const timeoutSecs: string = process.env.test_timeout_secs ?? '180'
 
 describe('ping test (dialer)', function () {
   if (!isDialer) {
@@ -16,7 +16,7 @@ describe('ping test (dialer)', function () {
   }
 
   // make the default timeout longer than the listener timeout
-  this.timeout(timeoutMs + 30_000)
+  this.timeout((parseInt(timeoutSecs) * 1000) + 30000)
   let node: Libp2p<{ ping: PingService }>
 
   beforeEach(async () => {
@@ -32,9 +32,7 @@ describe('ping test (dialer)', function () {
   })
 
   it('should dial and ping', async function () {
-    this.timeout(timeoutMs + 30_000)
-
-    let [, otherMaStr]: string[] = await redisProxy(['BLPOP', 'listenerAddr', `${timeoutMs / 1000}`])
+    let [, otherMaStr]: string[] = await redisProxy(['BLPOP', 'listenerAddr', timeoutSecs])
 
     // Hack until these are merged:
     // - https://github.com/multiformats/js-multiaddr-to-uri/pull/120
@@ -44,14 +42,10 @@ describe('ping test (dialer)', function () {
     const handshakeStartInstant = Date.now()
 
     console.error(`node ${node.peerId.toString()} dials: ${otherMa}`)
-    await node.dial(otherMa, {
-      signal: AbortSignal.timeout(timeoutMs)
-    })
+    await node.dial(otherMa)
 
     console.error(`node ${node.peerId.toString()} pings: ${otherMa}`)
-    const pingRTT = await node.services.ping.ping(multiaddr(otherMa), {
-      signal: AbortSignal.timeout(timeoutMs)
-    })
+    const pingRTT = await node.services.ping.ping(multiaddr(otherMa))
     const handshakePlusOneRTT = Date.now() - handshakeStartInstant
     console.log(JSON.stringify({
       handshakePlusOneRTTMillis: handshakePlusOneRTT,
