@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import List, Literal, TypeAlias, Union
 from pydantic import BaseModel
+from dataclasses import Field
+from dataclasses import field
 
 NodeID: TypeAlias = int
 
@@ -29,20 +31,6 @@ class WaitUntil(BaseModel):
     elapsedSeconds: int  # Seconds elapsed since test start
 
 
-class AddPartialMessage(BaseModel):
-    type: Literal["addPartialMessage"] = "addPartialMessage"
-    parts: int  # uint8 representing bitmap
-    topicID: str
-    groupID: int  # uint64 representing groupID
-
-
-class PublishPartial(BaseModel):
-    type: Literal["publishPartial"] = "publishPartial"
-    topicID: str
-    groupID: int  # uint64 representing groupID
-    publishToNodeIDs: List[NodeID] | None = None
-
-
 class Publish(BaseModel):
     type: Literal["publish"] = "publish"
     messageID: int
@@ -53,7 +41,6 @@ class Publish(BaseModel):
 class SubscribeToTopic(BaseModel):
     type: Literal["subscribeToTopic"] = "subscribeToTopic"
     topicID: str
-    partial: bool = False
 
 
 class SetTopicValidationDelay(BaseModel):
@@ -62,7 +49,6 @@ class SetTopicValidationDelay(BaseModel):
     validation process by delaying the validation results by some number of
     seconds.
     """
-
     type: Literal["setTopicValidationDelay"] = "setTopicValidationDelay"
     topicID: str
     delaySeconds: float
@@ -165,13 +151,6 @@ class GossipSubParams(BaseModel):
 
 
 ScriptInstruction = Union[
-    Connect,
-    IfNodeIDEquals,
-    WaitUntil,
-    Publish,
-    SubscribeToTopic,
-    SetTopicValidationDelay,
-    InitGossipSub,
-    AddPartialMessage,
-    PublishPartial,
+    Connect, IfNodeIDEquals, WaitUntil, Publish, SubscribeToTopic,
+    SetTopicValidationDelay, InitGossipSub
 ]

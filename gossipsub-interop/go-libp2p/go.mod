@@ -4,8 +4,7 @@ go 1.24.1
 
 require (
 	github.com/libp2p/go-libp2p v0.41.1
-	// fork with partial messages
-	github.com/libp2p/go-libp2p-pubsub v0.15.1-0.20260305223556-a01777894f4c
+	github.com/libp2p/go-libp2p-pubsub v0.13.1
 )
 
 require (
@@ -108,5 +107,5 @@ require (
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
-	lukechampine.com/blake3 v1.4.1 // indirect
+	lukechampine.com/blake3 v1.4.0 // indirect
 )
