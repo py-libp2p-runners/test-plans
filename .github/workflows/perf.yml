@@ -21,7 +21,7 @@ on:
 jobs:
   perf:
     name: Perf
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 360 # 6 hours is the maximum job execution time
     defaults:
       run:

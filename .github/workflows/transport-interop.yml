@@ -21,7 +21,7 @@ name: libp2p transport interop test
 jobs:
   run-transport-interop:
     # runs-on: [self-hosted, linux, x64, ephemeral]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +42,7 @@ jobs:
   combine-results:
     needs: run-transport-interop
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v4
